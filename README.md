@@ -1,158 +1,258 @@
-# Patchwork — Issue Management Platform with AI Analysis
+# Patchwork — AI-Powered Issue Management Platform
 
-Patchwork is a full-stack, TypeScript-based Issue Management Platform. Users can create, browse, discuss issues, and leverage Gemini AI to perform structured analyses on issues and their associated comments (covering summary, themes, key next steps, and sentiment).
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![React 19](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-C5F74F?style=for-the-badge&logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Gemini AI](https://img.shields.io/badge/Google_Gemini-4285F4?style=for-the-badge&logo=google-gemini&logoColor=white)](https://deepmind.google/technologies/gemini/)
 
-The project consists of a **NestJS** backend utilizing **Drizzle ORM** (PostgreSQL) and a **Next.js App Router** frontend styled with **TailwindCSS**.
-
----
-
-## Technical Stack
-
-- **Backend:** NestJS (v11+), Node.js, TypeScript
-- **Database:** PostgreSQL
-- **ORM:** Drizzle ORM
-- **AI Engine:** Google Gemini SDK (`gemini-1.5-flash` model)
-- **Frontend:** Next.js (v16 App Router), React 19, TypeScript
-- **Styling:** TailwindCSS (v4)
+Patchwork is a premium, full-stack Issue Management Platform built with a modern TypeScript stack. It enables teams to create, track, and collaborate on issues, while leveraging the power of Google Gemini AI (`gemini-1.5-flash`) to generate structured, actionable diagnostics from issues and their discussion threads.
 
 ---
 
-## Project Structure
+## 🌟 Key Features
 
-```
-/
-├── backend/               # NestJS application
-│   ├── src/
-│   │   ├── common/        # NestJS Interceptors & Filters
-│   │   ├── database/      # Drizzle schema, migrations, seed, database module
-│   │   ├── issues/        # Issues module (controller, service, DTOs)
-│   │   ├── comments/      # Comments module (controller, service, DTOs)
-│   │   └── ai/            # Gemini integration module (controller, service)
-│   ├── drizzle.config.ts  # Drizzle Kit migration configuration
-│   └── package.json
-│
-├── frontend/              # Next.js App Router application
-│   ├── app/               # Next.js pages & styling
-│   │   ├── page.tsx       # Issue dashboard list
-│   │   ├── issues/
-│   │   │   ├── new/       # Create issue page
-│   │   │   └── [id]/      # Issue details, comments thread, & AI report
-│   └── lib/
-│       └── api.ts         # Typed fetch API client
-│
-├── docker-compose.yml     # Multi-container orchestration
-└── README.md
+- **Intuitive Issue Dashboard:** Search, view, and filter issues dynamically by **Status** (`open`, `in-progress`, `closed`) and **Priority** (`low`, `medium`, `high`).
+- **Interactive Discussion Threads:** Add real-time comments to issues to capture team collaboration.
+- **Gemini AI Diagnostics:** Perform structured AI analyses on any issue, outputting:
+  - **Executive Summary:** A concise 2-3 sentence overview of the issue context and status.
+  - **Key Themes:** Automated extraction of high-level discussion patterns/topics.
+  - **Actionable Next Steps:** Bulleted checklists for rapid resolution.
+  - **Sentiment Tracking:** Discussion tone evaluation (e.g., *Urgent*, *Collaborative*, *Confused*).
+- **Graceful API Fallbacks:** Auto-switches to a mock diagnostic engine if a Google Gemini API Key is not configured.
+- **Robust Database Layer:** Schema modeling, indexing, relations, and migrations managed via Drizzle ORM.
+- **Docker-Ready Configuration:** Fully containerized setup via Docker Compose for local PostgreSQL, NestJS, and Next.js environments.
+
+---
+
+## 🏗️ Architecture & Tech Stack
+
+```mermaid
+graph TD
+    Client[Next.js 15 Frontend] <-->|REST API / JSON| Server[NestJS Backend]
+    Server <-->|Drizzle ORM| DB[(PostgreSQL Database)]
+    Server <-->|Google Generative AI SDK| Gemini[Gemini 1.5 Flash Model]
 ```
 
+### Frontend
+- **Framework:** Next.js 15 (App Router) & React 19 (TypeScript)
+- **Styling:** TailwindCSS v4 with a premium glassmorphic and high-contrast user interface
+- **API Client:** Clean, typed Fetch API client ([lib/api.ts](frontend/lib/api.ts))
+
+### Backend
+- **Framework:** NestJS (v11+) with modular architecture (`issues`, `comments`, `ai`)
+- **API Documentation:** Built-in interactive Swagger interface
+- **Validation:** Type-safe request validation and serialization (`class-validator`)
+
+### Database
+- **Engine:** PostgreSQL
+- **ORM:** Drizzle ORM with automatic schema migrations & seeders
+
 ---
 
-## Environment Variables
+## 📊 Database Schema & Relationships
 
-### Backend (`/backend/.env`)
-Create a `.env` file in the `backend/` directory:
+The database consists of three relational tables with cascading delete constraints:
+
+```mermaid
+erDiagram
+    issues {
+        uuid id PK
+        text title
+        text description
+        status status_enum
+        priority priority_enum
+        timestamp created_at
+        timestamp updated_at
+    }
+    comments {
+        uuid id PK
+        uuid issue_id FK
+        text body
+        text author_name
+        timestamp created_at
+    }
+    ai_analyses {
+        uuid id PK
+        uuid issue_id FK
+        text summary
+        timestamp generated_at
+    }
+
+    issues ||--o{ comments : "has many"
+    issues ||--o{ ai_analyses : "has many"
+```
+
+### Table Definitions
+
+#### 1. `issues`
+Stores metadata and details about tasks or bugs.
+- `id` (UUID, Default Random, Primary Key)
+- `title` (Text, Required)
+- `description` (Text, Required)
+- `status` (Enum: `open`, `in-progress`, `closed`, Default: `open`)
+- `priority` (Enum: `low`, `medium`, `high`, Default: `medium`)
+- `created_at` (Timestamp, Default Now)
+- `updated_at` (Timestamp, Default Now)
+
+#### 2. `comments`
+Stores collaborative discussions associated with specific issues.
+- `id` (UUID, Default Random, Primary Key)
+- `issue_id` (UUID, Foreign Key referencing `issues.id` on delete **Cascade**)
+- `body` (Text, Required)
+- `author_name` (Text, Required)
+- `created_at` (Timestamp, Default Now)
+
+#### 3. `ai_analyses`
+Stores the structured analysis generated by Google Gemini.
+- `id` (UUID, Default Random, Primary Key)
+- `issue_id` (UUID, Foreign Key referencing `issues.id` on delete **Cascade**)
+- `summary` (Text, Stores the raw stringified JSON output from Gemini containing keys `summary`, `keyThemes`, `nextSteps`, and `sentiment`)
+- `generated_at` (Timestamp, Default Now)
+
+---
+
+## 🔌 API Endpoints Reference
+
+All backend endpoints are prefixed with `/api` when routed through gateways or containers.
+
+### Issues Module
+
+| Method | Endpoint | Description | Query Parameters | Request Body |
+| :--- | :--- | :--- | :--- | :--- |
+| **GET** | `/issues` | Retrieve all issues | `status`, `priority` | N/A |
+| **GET** | `/issues/:id` | Retrieve an issue with comments and analyses | N/A | N/A |
+| **POST** | `/issues` | Create a new issue | N/A | `{ title, description, status?, priority? }` |
+| **PATCH** | `/issues/:id` | Update status or priority of an issue | N/A | `{ status?, priority? }` |
+
+### Comments Module
+
+| Method | Endpoint | Description | Request Body |
+| :--- | :--- | :--- | :--- |
+| **POST** | `/issues/:id/comments` | Post a comment to a specific issue | `{ body, authorName }` |
+
+### AI Module
+
+| Method | Endpoint | Description | Response Model |
+| :--- | :--- | :--- | :--- |
+| **POST** | `/issues/:id/analyze` | Request Gemini AI to analyze an issue thread | `{ id, issueId, summary, generatedAt }` |
+
+---
+
+## 🤖 Google Gemini AI Integration
+
+The AI engine uses the Google Generative AI SDK, querying `gemini-1.5-flash` with a JSON-enforced generation schema:
+
+```typescript
+const model = this.genAI.getGenerativeModel({
+  model: 'gemini-1.5-flash',
+  generationConfig: { responseMimeType: 'application/json' },
+});
+```
+
+### JSON Schema Output Structure
+```json
+{
+  "summary": "Brief 2-3 sentence overview...",
+  "keyThemes": ["theme-1", "theme-2"],
+  "nextSteps": ["action-item-1", "action-item-2"],
+  "sentiment": "Urgent | Collaborative | Confused | Neutral"
+}
+```
+
+If `GEMINI_API_KEY` is empty, the server automatically defaults to a realistic mock output, preserving full application functionality for offline or local-only development.
+
+---
+
+## ⚙️ Environment Variables
+
+### Root Directory (`/.env`) & Backend (`/backend/.env`)
+Create a `.env` file in the root directory (for Docker Compose) and/or in the `/backend` folder:
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/issues_db
 PORT=3001
-GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 ```
-> **Note:** If `GEMINI_API_KEY` is not provided, the backend falls back to a **Mock structured analysis** automatically so that you can run and test the application without a valid Google Gemini key.
+> **Note:** The database host will automatically map to `db` inside the Docker Compose network.
 
 ### Frontend (`/frontend/.env.local`)
-Create a `.env.local` file in the `frontend/` directory:
+Create an environment file for Next.js in `/frontend`:
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
 
 ---
 
-## Step-by-Step Local Setup
+## 🚀 Getting Started
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/) (v18.x or v20.x recommended)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (optional, if running PostgreSQL via docker compose)
-- A running PostgreSQL database (if running locally without Docker)
+- **Node.js** (v18.x or v20.x recommended)
+- **npm** (v9+ or v10+)
+- **PostgreSQL** or **Docker Desktop**
 
 ---
 
-### Step 1: Database Setup
+### Method A: Local Setup (Standalone)
 
-If you have Docker running, you can spin up PostgreSQL in the background:
+#### 1. Database Initialization
+Ensure PostgreSQL is running, then populate `/backend/.env`.
+
+#### 2. Backend Installation & Migrations
 ```bash
-docker compose up -d db
+# Navigate to backend and install packages
+cd backend
+npm install
+
+# Generate SQL migration files from the Drizzle Schema
+npm run db:generate
+
+# Execute migrations on your database
+npm run db:migrate
+
+# Seed your database with demo issues and comments
+npm run db:seed
+
+# Start NestJS development server
+npm run start:dev
 ```
-Otherwise, ensure you have a local PostgreSQL instance running and modify the `DATABASE_URL` in `backend/.env` to point to it (creating a database named `issues_db`).
+The NestJS server will start on [http://localhost:3001](http://localhost:3001).
+- Explore Swagger API documentation at [http://localhost:3001/api/docs](http://localhost:3001/api/docs).
+
+#### 3. Frontend Setup
+```bash
+# Navigate to frontend and install packages
+cd ../frontend
+npm install
+
+# Start Next.js development server
+npm run dev
+```
+The client app will launch at [http://localhost:3000](http://localhost:3000).
 
 ---
 
-### Step 2: Backend Setup & Seed
+### Method B: Docker Compose Setup (Recommended)
 
-1. Navigate to the backend folder and install dependencies:
-   ```bash
-   cd backend
-   npm install
-   ```
-2. Generate the migrations from the schema definition:
-   ```bash
-   npm run db:generate
-   ```
-3. Run migrations to apply tables to PostgreSQL:
-   ```bash
-   npm run db:migrate
-   ```
-4. Seed the database with 5 sample issues and comments:
-   ```bash
-   npm run db:seed
-   ```
-5. Start the backend development server:
-   ```bash
-   npm run start:dev
-   ```
-
-The backend server will run on [http://localhost:3001](http://localhost:3001).
-- Interactive Swagger docs will be available at [http://localhost:3001/api/docs](http://localhost:3001/api/docs).
-
----
-
-### Step 3: Frontend Setup
-
-1. Navigate to the frontend directory and install dependencies:
-   ```bash
-   cd ../frontend
-   npm install
-   ```
-2. Start the Next.js development server:
-   ```bash
-   npm run dev
-   ```
-
-The frontend application will be active at [http://localhost:3000](http://localhost:3000).
-
----
-
-## Running with Docker Compose
-
-To spin up PostgreSQL, the NestJS Backend, and the Next.js Frontend all together, run this command from the root directory:
+To run the entire platform—including PostgreSQL, NestJS Backend, and Next.js Frontend—as containerized services, execute from the root directory:
 
 ```bash
 docker compose up --build
 ```
-This commands builds the backend and frontend containers, connects them, and exposes:
-- **Frontend:** [http://localhost:3000](http://localhost:3000)
-- **Backend:** [http://localhost:3001](http://localhost:3001)
+
+#### Services exposed by Docker Compose:
+- **Frontend client:** [http://localhost:3000](http://localhost:3000)
+- **Backend API:** [http://localhost:3001](http://localhost:3001)
+- **Interactive Swagger Docs:** [http://localhost:3001/api/docs](http://localhost:3001/api/docs)
+- **Database Engine:** `localhost:5432`
 
 ---
 
-## Deployment Links (Placeholders)
+## 🎨 Design & Theme
 
-- **Frontend URL:** `https://patchwork-issue-tracker.vercel.app`
-- **Backend API URL:** `https://api.patchwork-tracker.com`
-
----
-
-## AI Analysis Mechanism
-
-When a user clicks "Analyze with Gemini" on an issue detail page:
-1. The backend triggers a structured request using the `@google/generative-ai` SDK.
-2. The prompt aggregates the **Issue Title**, **Description**, and all **Comment Thread history**.
-3. It uses `gemini-1.5-flash` to return a structured JSON response mapping out a concise **Summary**, **Key Themes**, **Sentiment analysis**, and **Suggested Next Steps**.
-4. The result is saved in the `ai_analyses` table and rendered in a modern highlighted panel on the frontend.
+Patchwork utilizes a clean modern dashboard theme including:
+- **TailwindCSS v4** configuration for lightning-fast styling
+- **Glassmorphism effects** with subtle shadows and borders
+- **Dynamic visual badges** indicating status and priority colors
+- **Interactive panels** that present rich AI insight reports beautifully
