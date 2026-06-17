@@ -2,6 +2,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 export default function Home() {
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const swaggerUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/docs`;
+
   return (
     <div className="w-full space-y-24 py-8">
       {/* Hero Section */}
@@ -28,7 +31,7 @@ export default function Home() {
               + New Issue
             </Link>
             <a
-              href="http://localhost:3001/api/docs"
+              href={swaggerUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center rounded-lg border-2 border-[#778873] px-6 py-3 text-sm font-semibold text-[#778873] hover:bg-[#778873] hover:text-white transition-all duration-200 active:scale-95"
