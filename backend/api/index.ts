@@ -1,16 +1,23 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { AppModule } from './app.module';
-import { ResponseInterceptor } from './common/response.interceptor';
-import { HttpExceptionFilter } from './common/http-exception.filter';
+import { AppModule } from '../src/app.module';
+import { ResponseInterceptor } from '../src/common/response.interceptor';
+import { HttpExceptionFilter } from '../src/common/http-exception.filter';
+import { ExpressAdapter } from '@nestjs/platform-express';
+import * as express from 'express';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+const server = express();
+
+export const bootstrap = async (expressInstance: express.Express) => {
+  const app = await NestFactory.create(
+    AppModule,
+    new ExpressAdapter(expressInstance),
+  );
 
   // Enable CORS
   app.enableCors({
-    origin: '*', // In production, replace with specific origins
+    origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
@@ -37,7 +44,7 @@ async function bootstrap() {
     .addTag('comments')
     .addTag('ai')
     .build();
-  
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document, {
     customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.min.css',
@@ -47,9 +54,9 @@ async function bootstrap() {
     ],
   });
 
-  const port = process.env.PORT || 3001;
-  await app.listen(port);
-  console.log(`Backend server is running on http://localhost:${port}`);
-  console.log(`Swagger documentation is available at http://localhost:${port}/api/docs`);
-}
-bootstrap();
+  await app.init();
+};
+
+bootstrap(server);
+
+export default server;
