@@ -8,7 +8,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Gemini AI](https://img.shields.io/badge/Google_Gemini-4285F4?style=for-the-badge&logo=google-gemini&logoColor=white)](https://deepmind.google/technologies/gemini/)
 
-Patchwork is a premium, full-stack Issue Management Platform built with a modern TypeScript stack. It enables teams to create, track, and collaborate on issues, while leveraging the power of Google Gemini AI (`gemini-1.5-flash`) to generate structured, actionable diagnostics from issues and their discussion threads.
+Patchwork is a premium, full-stack Issue Management Platform built with a modern TypeScript stack. It enables teams to create, track, and collaborate on issues, while leveraging the power of Google Gemini AI (`gemini-3.5-flash`) to generate structured, actionable diagnostics from issues and their discussion threads.
 
 ---
 
@@ -33,7 +33,7 @@ Patchwork is a premium, full-stack Issue Management Platform built with a modern
 graph TD
     Client[Next.js 15 Frontend] <-->|REST API / JSON| Server[NestJS Backend]
     Server <-->|Drizzle ORM| DB[(PostgreSQL Database)]
-    Server <-->|Google Generative AI SDK| Gemini[Gemini 1.5 Flash Model]
+    Server <-->|Google Generative AI SDK| Gemini[Gemini 3.5 Flash Model]
 ```
 
 ### Frontend
@@ -143,11 +143,11 @@ All backend endpoints are prefixed with `/api` when routed through gateways or c
 
 ## 🤖 Google Gemini AI Integration
 
-The AI engine uses the Google Generative AI SDK, querying `gemini-1.5-flash` with a JSON-enforced generation schema:
+The AI engine uses the Google Generative AI SDK, querying `gemini-3.5-flash` with a JSON-enforced generation schema:
 
 ```typescript
 const model = this.genAI.getGenerativeModel({
-  model: 'gemini-1.5-flash',
+  model: 'gemini-3.5-flash',
   generationConfig: { responseMimeType: 'application/json' },
 });
 ```

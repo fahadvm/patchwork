@@ -35,7 +35,7 @@ export class AiService {
     if (this.genAI) {
       try {
         const model = this.genAI.getGenerativeModel({
-          model: 'gemini-1.5-flash',
+          model: 'gemini-3.5-flash',
           generationConfig: { responseMimeType: 'application/json' },
         });
 
