@@ -5,7 +5,7 @@ import { AppModule } from '../src/app.module';
 import { ResponseInterceptor } from '../src/common/response.interceptor';
 import { HttpExceptionFilter } from '../src/common/http-exception.filter';
 import { ExpressAdapter } from '@nestjs/platform-express';
-import * as express from 'express';
+import express from 'express';
 
 const server = express();
 
