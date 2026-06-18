@@ -33,19 +33,13 @@ export class AiService {
     let rawResponseText = '';
 
     if (this.genAI) {
-      try {
-        const model = this.genAI.getGenerativeModel({
-          model: 'gemini-3.5-flash',
-          generationConfig: { responseMimeType: 'application/json' },
-        });
+      const commentsText = issue.comments && issue.comments.length > 0
+        ? issue.comments
+            .map((c) => `Author: ${c.authorName}\nComment: ${c.body}`)
+            .join('\n\n')
+        : 'No comments added yet.';
 
-        const commentsText = issue.comments && issue.comments.length > 0
-          ? issue.comments
-              .map((c) => `Author: ${c.authorName}\nComment: ${c.body}`)
-              .join('\n\n')
-          : 'No comments added yet.';
-
-        const prompt = `You are an expert systems analyst. Analyze the following issue and comment thread.
+      const prompt = `You are an expert systems analyst. Analyze the following issue and comment thread.
 
 Issue Title: ${issue.title}
 Issue Description: ${issue.description}
@@ -61,12 +55,32 @@ Return a structured JSON object with these EXACT keys:
   "sentiment": "Overall tone of the discussion (e.g. Urgent, Collaborative, Confused, Neutral)"
 }`;
 
-        const result = await model.generateContent(prompt);
-        rawResponseText = result.response.text();
-      } catch (err) {
-        console.error('Error calling Gemini API:', err);
+      const modelsToTry = ['gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'];
+      let lastError: unknown = null;
+      let success = false;
+
+      for (const modelName of modelsToTry) {
+        try {
+          console.log(`Attempting Gemini analysis with model: ${modelName}`);
+          const model = this.genAI.getGenerativeModel({
+            model: modelName,
+            generationConfig: { responseMimeType: 'application/json' },
+          });
+          const result = await model.generateContent(prompt);
+          rawResponseText = result.response.text();
+          success = true;
+          console.log(`Successfully completed analysis using model: ${modelName}`);
+          break;
+        } catch (err) {
+          console.warn(`Failed to analyze issue with model ${modelName}:`, err);
+          lastError = err;
+        }
+      }
+
+      if (!success) {
+        console.error('All Gemini models failed:', lastError);
         throw new BadRequestException(
-          `Failed to call Gemini API: ${err instanceof Error ? err.message : String(err)}`,
+          `Failed to call Gemini API (all models exhausted): ${lastError instanceof Error ? lastError.message : String(lastError)}`,
         );
       }
     } else {
